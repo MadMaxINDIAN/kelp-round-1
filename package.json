@@ -1,0 +1,27 @@
+{
+  "name": "kelp-round-1",
+  "version": "1.0.0",
+  "description": "Postgress Password - pi8iSXA3n.UGBh*",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MadMaxINDIAN/kelp-round-1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MadMaxINDIAN/kelp-round-1/issues"
+  },
+  "homepage": "https://github.com/MadMaxINDIAN/kelp-round-1#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.0",
+    "express": "^5.1.0",
+    "multer": "^2.0.1",
+    "pg": "^8.16.2"
+  }
+}
