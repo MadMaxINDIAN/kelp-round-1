@@ -63,43 +63,50 @@ app.post('/upload', fileUpload.single('file'), async (req, res) => {
         const jsonObject = CreateJsonObject(headerData, lineData);
         rowCount++;
 
-        try {
-            const fullName = jsonObject.name.firstName + ' ' + jsonObject.name.lastName;
-            const age = parseInt(jsonObject.age, 10);
-            const address = jsonObject.address ? JSON.stringify(jsonObject.address) : null;
-
-            const { name, age: _, address: __, ...rest } = jsonObject;
-            const additionalInfo = Object.keys(rest).length > 0 ? JSON.stringify(rest) : null;
-
-            // Use BATCH_SIZE from environment variable (default to 1000 if not set)
-            const BATCH_SIZE = parseInt(process.env.BATCH_SIZE, 10) || 1000;
-            db_query.push([fullName, age, address, additionalInfo]);
-
-            if (db_query.length >= BATCH_SIZE) {
-                const values = db_query
-                    .map((_, i) => `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`)
-                    .join(', ');
-                const flatValues = db_query.flat();
-                db_triggers.push(
-                    pool.query(
-                        `INSERT INTO users (name, age, address, additional_info) VALUES ${values}`,
-                        flatValues
-                    )
-                );
-                db_query = [];
-            }
-        } catch (err) {
-            console.error('Error inserting record:', err);
-        }
-        // break;
+        db_query = PreProcessDBqueryIntoBatch(jsonObject, db_query, db_triggers);
     }
 
     const endTime = Date.now();
     console.log(`Processed ${rowCount} rows in ${((endTime - startTime) / 1000).toFixed(2)} seconds.`);
 
+    await AddRecordsInDB(db_triggers, rowCount);
+});
+
+function PreProcessDBqueryIntoBatch(jsonObject, db_query, db_triggers) {
+    try {
+        const fullName = jsonObject.name.firstName + ' ' + jsonObject.name.lastName;
+        const age = parseInt(jsonObject.age, 10);
+        const address = jsonObject.address ? JSON.stringify(jsonObject.address) : null;
+
+        const { name, age: _, address: __, ...rest } = jsonObject;
+        const additionalInfo = Object.keys(rest).length > 0 ? JSON.stringify(rest) : null;
+
+        const BATCH_SIZE = parseInt(process.env.BATCH_SIZE, 10) || 1000;
+        db_query.push([fullName, age, address, additionalInfo]);
+
+        if (db_query.length >= BATCH_SIZE) {
+            const values = db_query
+                .map((_, i) => `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`)
+                .join(', ');
+            const flatValues = db_query.flat();
+            db_triggers.push(
+                pool.query(
+                    `INSERT INTO users (name, age, address, additional_info) VALUES ${values}`,
+                    flatValues
+                )
+            );
+            db_query = [];
+        }
+    } catch (err) {
+        console.error('Error inserting record:', err);
+    }
+    return db_query;
+}
+
+async function AddRecordsInDB(db_triggers, rowCount) {
     try {
         await Promise.all(db_triggers);
-        console.log(`Successfully inserted ${db_triggers.length} records into the database.`);
+        console.log(`Successfully inserted ${rowCount} records into the database.`);
 
         const result = await pool.query(`
             SELECT
@@ -122,7 +129,7 @@ app.post('/upload', fileUpload.single('file'), async (req, res) => {
     } catch (err) {
         console.error('Error inserting records into the database:', err);
     }
-});
+}
 
 function CreateJsonObject(HeaderData, LineData) {
     let finalJsonObject = {};
