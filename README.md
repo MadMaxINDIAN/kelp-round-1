@@ -14,7 +14,7 @@ CREATE TABLE public.users (
 
 ## Sample Run on Local Machine
 
-![Evidence](evidence.png)
+![Evidence](Evidence.png)
 
 ## Example `.env` File
 Add this File in root folder to configure it correctly
