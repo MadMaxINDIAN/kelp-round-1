@@ -22,6 +22,9 @@ app.use(cors());
 app.post('/upload', fileUpload.single('file'), async (req, res) => {
     res.json({ status: 'success', message: 'File uploaded successfully. Wait for results in to be printed in console.', file: req.file });
 
+    // clear db
+    await pool.query('DELETE FROM users');
+
     const filePath = path.join(__dirname, '/public', req.file.filename);
 
     // Wait for the file to be available
